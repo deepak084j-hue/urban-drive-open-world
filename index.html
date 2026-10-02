@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>URBAN DRIVE | Open World v2.1</title>
+<style>
+:root{--cyan:#61f4e7;--pink:#ff83b8;--gold:#ffd166;--glass:rgba(8,13,24,.84);--line:rgba(255,255,255,.16)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101821;color:#fff;font-family:Inter,Segoe UI,Arial,sans-serif}canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 5px #000}.panel{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(12px);border-radius:14px;box-shadow:0 10px 32px #0005}
+#brand{position:absolute;left:16px;top:14px;padding:11px 14px;min-width:205px}#brand b{letter-spacing:3px;font-size:13px;color:var(--cyan)}#brand .sub{font-size:10px;letter-spacing:2px;color:#b8c5d7;margin-top:5px}
+#stats{position:absolute;right:16px;top:14px;padding:11px 14px;min-width:175px;text-align:right}#cash{font-size:23px;font-weight:900;color:var(--gold)}#district{font-size:10px;color:#c9d5e6;margin-top:4px;letter-spacing:1px}#wanted{font-size:16px;letter-spacing:4px;color:#ff5b6e;margin-top:3px}
+#mission{position:absolute;left:16px;top:96px;width:min(285px,calc(100vw - 32px));padding:12px 14px}#mission .eyebrow{font-size:10px;letter-spacing:2px;color:var(--cyan)}#missionTitle{font-weight:800;margin:6px 0 4px}#missionText{font-size:12px;color:#d0d8e4;line-height:1.5}#progress{height:4px;background:#ffffff1b;border-radius:9px;margin-top:9px;overflow:hidden}#progressFill{height:100%;width:0;background:var(--cyan);transition:width .2s}
+#companion{position:absolute;left:16px;top:228px;width:min(285px,calc(100vw - 32px));padding:10px 13px;display:none}#companion .label{font-size:10px;color:var(--pink);letter-spacing:2px}#companionName{font-size:13px;font-weight:800;margin-top:4px}#companionStatus{font-size:11px;color:#d5dce7;margin-top:3px}
+#aanyaDialogue{position:absolute;left:50%;top:18%;transform:translateX(-50%);display:none;max-width:min(440px,80vw);padding:12px 16px;border:1px solid #ff9fd477;border-radius:18px;background:#191725df;color:#fff;font-size:14px;font-weight:650;text-align:center;box-shadow:0 8px 35px #0006;z-index:12;backdrop-filter:blur(8px);pointer-events:none}
+#aanyaDialogue:after{content:'♥';color:#ff9fd4;margin-left:8px}
+#speedBox{position:absolute;right:16px;bottom:16px;padding:11px 14px;text-align:right;min-width:135px}#speed{font-size:32px;font-weight:900;line-height:1}#speed small{font-size:10px;color:#b8c5d7}#vehicleLabel{font-size:10px;color:#b8c5d7;margin-top:5px}
+#help{position:absolute;left:16px;bottom:16px;padding:9px 12px;font-size:10px;color:#dce6f4;line-height:1.65;max-width:290px}
+#minimapWrap{position:absolute;right:16px;top:125px;width:142px;height:142px;padding:5px;border-radius:50%;overflow:hidden;background:rgba(5,10,18,.88);border:2px solid #ffffff55;box-shadow:0 8px 28px #0007}#minimap{width:100%;height:100%;border-radius:50%}
+#toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);padding:12px 18px;max-width:85vw;text-align:center;font-weight:800;opacity:0;transition:opacity .2s}
+#start{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#203748e8,#060b13f7);padding:20px}
+#startCard{width:min(590px,100%);padding:28px;border:1px solid #ffffff25;border-radius:22px;background:#09121de8;box-shadow:0 24px 80px #0009}
+#startCard h1{font-size:clamp(28px,6vw,48px);line-height:1;margin:0;letter-spacing:-2px}#startCard h1 span{color:var(--pink)}#startCard p{color:#b8c5d7;line-height:1.65;font-size:14px}
+button{pointer-events:auto;border:0;background:var(--cyan);color:#07131b;font-weight:900;letter-spacing:1px;border-radius:10px;padding:13px 17px;cursor:pointer}#startCard button{width:100%;margin-top:10px}#startCard .chips{display:flex;gap:7px;flex-wrap:wrap;margin:17px 0}.chip{font-size:11px;border:1px solid #ffffff20;border-radius:99px;padding:7px 10px;color:#d9e5f3}#notice{font-size:11px;color:#8495aa;margin-top:12px}
+#modal{position:fixed;z-index:6;inset:0;display:none;align-items:center;justify-content:center;background:#030812a8;padding:18px;pointer-events:auto}#modalCard{width:min(450px,100%);padding:22px;background:#0a1522;border:1px solid #ffffff2b;border-radius:18px;box-shadow:0 24px 90px #000a}#modalCard h2{margin:0 0 8px;font-size:23px}#modalCard p{color:#bdcada;font-size:13px;line-height:1.6}#modalButtons{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}#modalButtons button{flex:1;min-width:110px}#modalButtons .secondary{background:#263747;color:#eaf2fa}
+@media(max-width:600px){#brand{left:8px;top:8px;min-width:0;padding:8px 9px}#stats{right:8px;top:8px;min-width:0;padding:8px 9px}#cash{font-size:18px}#mission{left:8px;top:80px;padding:9px;width:190px}#companion{left:8px;top:206px;width:190px;padding:8px}#minimapWrap{right:8px;top:105px;width:100px;height:100px}#help{left:8px;bottom:8px;font-size:9px;max-width:195px}#speedBox{right:8px;bottom:8px;padding:8px 9px;min-width:95px}#speed{font-size:25px}}
+#touchControls{display:none;position:fixed;z-index:25;inset:auto 12px 118px 12px;justify-content:space-between;align-items:flex-end;pointer-events:none;touch-action:none}#touchControls .cluster{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,48px);gap:5px;pointer-events:auto}#touchControls button{padding:0;border:1px solid #ffffff50;background:#091724c9;color:#fff;border-radius:13px;font-size:18px;letter-spacing:0;touch-action:none;user-select:none;-webkit-user-select:none}#touchControls .actions{display:flex;flex-direction:column;gap:7px;pointer-events:auto}#touchControls .actions button{min-width:56px;min-height:46px;font-size:11px}#touchControls .cluster .up{grid-column:2;grid-row:1}#touchControls .cluster .left{grid-column:1;grid-row:2}#touchControls .cluster .down{grid-column:2;grid-row:2}#touchControls .cluster .right{grid-column:3;grid-row:2}@media(max-width:800px),(pointer:coarse){#touchControls{display:flex}#help{display:none}#speedBox{bottom:12px}}
+</style></head><body>
+<div id="hud">
+ <div id="brand" class="panel"><b>URBAN DRIVE</b><div class="sub">OPEN WORLD • BUILD 2.1</div></div>
+ <div id="stats" class="panel"><div id="cash">$ 2,500</div><div id="district">DOWNTOWN DISTRICT</div><div id="wanted">☆☆☆☆☆</div></div>
+ <div id="mission" class="panel"><div class="eyebrow">ACTIVE CONTRACT</div><div id="missionTitle">Courier Run</div><div id="missionText">Follow the cyan beacon and complete checkpoints.</div><div id="progress"><div id="progressFill"></div></div></div>
+ <div id="aanyaDialogue"></div><div id="companion" class="panel"><div class="label">YOUR COMPANION</div><div id="companionName">Aanya • Partner in the city</div><div id="companionStatus">Nearby · Ready to explore</div></div>
+ <div id="minimapWrap"><canvas id="minimap" width="256" height="256"></canvas></div>
+ <div id="speedBox" class="panel"><div><span id="speed">0</span> <small>KM/H</small></div><div id="vehicleLabel">ON FOOT</div></div>
+ <div id="help" class="panel">WASD / Arrows: move or drive<br>E: enter / exit vehicle · F: call / wait / ride together<br>G: interact / private moment · H: private suite · Shift: boost<br>Space: handbrake · C: paint · V: engine upgrade · B: handling · N: repair · P: pause · K: save · Y: phone · J: outfit · L: talk · O: date choices · U: cute gesture · Q: Aanya story quest · H: suite · M: kiss · X: hug · Z: lift Aanya in suite</div>
+ <div id="toast" class="panel"></div>
+</div>
+<div id="touchControls" aria-label="Touch driving controls"><div class="cluster"><button class="up" data-key="w">▲</button><button class="left" data-key="a">◀</button><button class="down" data-key="s">▼</button><button class="right" data-key="d">▶</button></div><div class="actions"><button data-tap="e">ENTER<br>CAR</button><button data-tap="f">AANYA</button><button data-tap="h">SUITE</button><button data-tap="y">PHONE</button></div></div>
+<div id="start"><div id="startCard">
+ <div style="font-size:11px;color:#ff83b8;letter-spacing:3px;margin-bottom:12px">FREE BROWSER OPEN-WORLD PROTOTYPE</div>
+ <h1>YOUR CITY. YOUR <span>STORY.</span></h1>
+ <p>Meet Aanya, explore the city, build your bond, run courier contracts, customize cars, and use your in-game phone for daily rewards, quick services, snapshots, and romantic scenes in the private suite: hugs, carrying Aanya, and a kiss.</p>
+ <div class="chips"><span class="chip">💗 Companion AI</span><span class="chip">🚘 Passenger rides</span><span class="chip">🌇 Date missions</span><span class="chip">📱 City phone</span><span class="chip">📸 Snapshots</span><span class="chip">💾 Save game</span></div>
+ <button id="play">ENTER THE CITY</button><div id="notice">v2.1 • Click ENTER THE CITY first. Desktop: WASD. Touch controls included for mobile. Internet required for Three.js.</div>
+</div></div>
+<div id="modal"><div id="modalCard"><h2 id="modalTitle">PAUSED</h2><p id="modalText">Take a breather, driver.</p><div id="modalButtons"></div></div></div>
+<div id="bootError" style="display:none;position:fixed;z-index:99;inset:0;background:#07101af5;color:#fff;padding:24px;align-items:center;justify-content:center;font:15px/1.6 Arial,sans-serif"><div style="max-width:620px;background:#111f2d;border:1px solid #ff83b8;border-radius:18px;padding:24px"><h2 style="margin-top:0;color:#ff83b8">Game engine did not start</h2><p id="bootErrorText">The 3D engine could not load. Check your internet connection and reload the page.</p><p style="color:#b8c5d7">This version now shows this message instead of leaving the start screen unresponsive. Make sure GitHub Pages is serving the new index.html and that jsdelivr.net is not blocked.</p><button onclick="location.reload()" style="padding:12px 18px;background:#61f4e7;border:0;border-radius:9px;font-weight:bold;cursor:pointer">RELOAD GAME</button></div></div>
+<script>
+(function(){
+  window.__urbanDriveReady=false;
+  window.addEventListener('error',function(e){
+    if(e && (e.message || (e.filename && e.filename.includes('cdn.jsdelivr.net')))){
+      var box=document.getElementById('bootError');var msg=document.getElementById('bootErrorText');
+      if(box&&msg){box.style.display='flex';msg.textContent='Startup error: '+(e.message||'3D engine failed to load')+'. Try Ctrl+Shift+R and check your internet connection.';}
+    }
+  });
+  window.addEventListener('unhandledrejection',function(e){var box=document.getElementById('bootError');var msg=document.getElementById('bootErrorText');if(box&&msg){box.style.display='flex';msg.textContent='Startup error: '+String(e.reason||'module failed to load')+'. Check internet and reload.';}});
+  setTimeout(function(){if(!window.__urbanDriveReady){var box=document.getElementById('bootError');if(box)box.style.display='flex';}},9000);
+})();
+</script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const $=s=>document.querySelector(s);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8ce);scene.fog=new THREE.Fog(0x91b8ce,105,440);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,850);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xd7efff,0x33402e,2));const sun=new THREE.DirectionalLight(0xffedca,2.7);sun.position.set(-80,130,50);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);sun.shadow.camera.left=-150;sun.shadow.camera.right=150;sun.shadow.camera.top=150;sun.shadow.camera.bottom=-150;scene.add(sun);
+const mat=(c,r=.8,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const mats={road:mat(0x303943),side:mat(0xb9b8ac),grass:mat(0x4f7758),line:mat(0xf4e5a8),glass:mat(0x83bac8,.25,.3),rubber:mat(0x17191d),dark:mat(0x252d37),gold:mat(0xf0b84b)};
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mats.grass);ground.rotation.x=-Math.PI/2;ground.position.y=-.13;ground.receiveShadow=true;scene.add(ground);
+const buildings=[],colliders=[],cars=[],pedestrians=[],traffic=[];
+function box(w,h,d,material,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function addRoad(x,z,w,d){box(w,.12,d,mats.road,x,.01,z);if(w>d){for(let xx=x-w/2+5;xx<x+w/2-2;xx+=8)box(3,.015,.13,mats.line,xx,.08,z)}else{for(let zz=z-d/2+5;zz<z+d/2-2;zz+=8)box(.13,.015,3,mats.line,x,.08,zz)}}
+const block=52,roadW=13,cityN=5;for(let i=-cityN;i<=cityN;i++){addRoad(i*block,0,roadW,650);addRoad(0,i*block,650,roadW)}
+for(let i=-cityN;i<=cityN;i++)for(const s of [-1,1]){box(2,.22,640,mats.side,i*block+s*8,.14,0);box(640,.22,2,mats.side,0,.14,i*block+s*8)}
+const bcols=[0x9eabb6,0xd0bba0,0x6e8495,0xc5c9c8,0xa77e69,0x7e8e79,0x6e7283];
+for(let gx=-cityN;gx<cityN;gx++)for(let gz=-cityN;gz<cityN;gz++){const cx=(gx+.5)*block,cz=(gz+.5)*block;if(Math.abs(gx)<=1&&Math.abs(gz)<=1&&Math.random()<.38)continue;let n=1+Math.floor(Math.random()*3);for(let k=0;k<n;k++){let x=cx+(Math.random()-.5)*28,z=cz+(Math.random()-.5)*28,w=7+Math.random()*10,d=7+Math.random()*10,h=8+Math.random()*42;box(w,h,d,mat(bcols[Math.floor(Math.random()*bcols.length)],.92),x,h/2,z);buildings.push({x,z,w,d,h});colliders.push({x,z,w,d});if(Math.random()<.45)box(w*.4,1.2,d*.4,mat(0x555e6a),x,h+.6,z);if(w>8){let wm=mat(0x344d5a,.3,.1);for(let yy=3;yy<h-2;yy+=4)for(let xx=-w/2+1.6;xx<w/2-1;xx+=3.2){box(.95,1.3,.08,wm,x+xx,yy,z+d/2+.045);box(.95,1.3,.08,wm,x+xx,yy,z-d/2-.045)}}}}
+box(34,.12,34,mat(0x73966a),0,.08,0);for(let i=0;i<18;i++){let x=(Math.random()-.5)*29,z=(Math.random()-.5)*29;box(.6,2.3,.6,mat(0x60472e),x,1.2,z);let crown=new THREE.Mesh(new THREE.SphereGeometry(1.7,8,7),mat([0x2f774a,0x3d8953,0x5c9955][i%3]));crown.position.set(x,3,z);scene.add(crown)}
+function makeCar(x,z,color,type='sedan',heading=0,ai=false){const g=new THREE.Group();scene.add(g);g.position.set(x,0,z);g.rotation.y=heading;const dims=type==='truck'?[2.5,1.7,5.2]:type==='van'?[2.1,1.7,4.4]:type==='taxi'?[1.9,1.35,3.8]:type==='sports'?[1.9,1,3.7]:[2,1.25,4.1];const [w,h,l]=dims;const bodyMesh=box(w,h*.55,l,mat(color,.35,.25),0,.72,0,g);box(w*.78,h*.5,l*.48,mats.glass,0,.72+h*.42,-.12,g);if(type==='truck')box(w*.94,.8,l*.46,mat(0xb5b9bc),0,1.1,l*.3,g);if(type==='taxi')box(.65,.13,.3,mat(0xf0b84b),0,1.55,-.1,g);const wg=new THREE.CylinderGeometry(.36,.36,.22,12);for(const xx of [-w*.48,w*.48])for(const zz of [-l*.32,l*.32]){let wh=new THREE.Mesh(wg,mats.rubber);wh.rotation.z=Math.PI/2;wh.position.set(xx,.36,zz);g.add(wh)}for(const xx of [-w*.32,w*.32]){box(.18,.13,.08,mat(0xfff0bd),xx,.76,-l/2-.02,g);box(.18,.13,.08,mat(0xe34848),xx,.72,l/2+.02,g)}let c={g,type,w,h,l,speed:0,ai,health:100,bodyMesh,baseTop:type==='truck'?24:32,engineLevel:0,handlingLevel:0,paintIndex:0};cars.push(c);if(ai)traffic.push(c);return c}
+makeCar(3,8,0x19c7bc,'sports',0,false);let activeCar=null,onFoot=true;
+const types=['sedan','taxi','van','truck','sports'],colors=[0xd9514e,0xe3e6ea,0x3984cf,0xe6b84c,0x5aab72,0x3e4651];for(let i=0;i<35;i++){let hor=Math.random()<.5,ri=Math.floor(Math.random()*9)-4,x=hor?(Math.random()-.5)*430:ri*block+(Math.random()<.5?-3:3),z=hor?ri*block+(Math.random()<.5?-3:3):(Math.random()-.5)*430,heading=hor?(Math.random()<.5?0:Math.PI/2):(Math.random()<.5?Math.PI/2:0);makeCar(x,z,colors[i%colors.length],types[i%types.length],heading,true)}
+const skin=[0xb87855,0xe0ae86,0x704631,0xc98b68],shirts=[0x4c91b8,0xe2a44a,0x9b6eb0,0x4e9875,0xc65f58];for(let i=0;i<48;i++){let g=new THREE.Group(),x=(Math.random()-.5)*470,z=(Math.random()-.5)*470;box(.42,.85,.28,mat(shirts[i%shirts.length]),0,.9,0,g);box(.38,.38,.38,mat(skin[i%skin.length]),0,1.55,0,g);box(.15,.58,.16,mat(0x252d37),-.12,.28,0,g);box(.15,.58,.16,mat(0x252d37),.12,.28,0,g);g.position.set(x,0,z);scene.add(g);pedestrians.push({g,x,z,phase:Math.random()*6.28,dir:Math.random()*6.28})}
+// Main player character, deliberately stylized, with head, hair, torso, arms and legs.
+const player=new THREE.Group();scene.add(player);
+const playerSkin=mat(0xc58c6b),playerShirt=mat(0x24bfb1),pants=mat(0x202d43),hair=mat(0x191719);
+box(.58,.82,.32,playerShirt,0,1.13,0,player);box(.25,.7,.24,pants,-.17,.38,0,player);box(.25,.7,.24,pants,.17,.38,0,player);
+const playerLeftArm=box(.18,.72,.19,playerShirt,-.4,1.08,0,player),playerRightArm=box(.18,.72,.19,playerShirt,.4,1.08,0,player);
+const playerHead=box(.4,.44,.4,playerSkin,0,1.83,0,player);box(.42,.19,.42,hair,0,2.09,-.015,player);box(.09,.25,.42,hair,-.17,1.97,0,player);box(.09,.25,.42,hair,.17,1.97,0,player);
+box(.07,.045,.025,mat(0x252020),-.1,1.88,.21,player);box(.07,.045,.025,mat(0x252020),.1,1.88,.21,player);player.position.set(0,0,0);
+// Aanya: adult fictional companion with layered hair, facial features, outfit, arms, legs and shoes.
+
+// v0.9 PRIVATE SUITE: a cozy, fully clothed, non-explicit romance space.
+let privateMode=false, outsidePrivatePos={x:0,z:0,rotation:0}, privateMomentCount=0, kissUntil=0, affectionAction="", affectionUntil=0;
+let aanyaOutfitIndex=0, aanyaDialogueUntil=0, aanyaConversationStep=0, aanyaDateActive=false;
+let aanyaQuestActive=false, aanyaQuestStage=0;
+const aanyaQuestStops=[
+ {x:42,z:36,title:'Meet at the city plaza',text:'Weekend Quest 1/3 • Meet Aanya at the city plaza.'},
+ {x:-48,z:-34,title:'Visit the garden lookout',text:'Weekend Quest 2/3 • Take the scenic route to the garden lookout.'},
+ {x:68,z:-52,title:'Reach the night market',text:'Weekend Quest 3/3 • Finish your little city adventure at the night market.'}
+];
+function startAanyaQuest(){
+ if(!gameStarted||paused||privateMode)return;
+ aanyaQuestActive=true;aanyaQuestStage=0;
+ missionTarget.set(aanyaQuestStops[0].x,0,aanyaQuestStops[0].z);
+ $('#missionTitle').textContent='Aanya’s Weekend';
+ $('#missionText').textContent=aanyaQuestStops[0].text;
+ $('#progressFill').style.width='0%';
+ closeModal();
+ aanyaSpeak('hello');
+ toast('NEW STORY QUEST: Aanya’s Weekend 💗');
+}
+let aanyaWalkPhase=0, aanyaLastCompanionPos=null;
+const dateChoices=[
+ {label:'🌇 Watch the sunset',line:'The sky looks unreal tonight. I wish this moment could last a little longer.',bond:3},
+ {label:'🍦 Get ice cream',line:'You remembered my favourite kind? Okay, you win today. 🍦',bond:2},
+ {label:'📸 Take a cute photo',line:'Wait, let me fix my hair first! This one is going in our memories. 📸',bond:2}
+];
+const aanyaOutfits=[
+ {name:'Rose Date',top:0xb85e91,skirt:0x303e67,shoes:0xeee7ef},
+ {name:'City Casual',top:0x3e91a8,skirt:0x26394b,shoes:0xf3f0e7},
+ {name:'Golden Hour',top:0xd58a42,skirt:0x6b3c55,shoes:0xffdfb0},
+ {name:'Night Out',top:0x6e5bd0,skirt:0x202433,shoes:0xd9d9ff}
+];
+const aanyaLines={
+ hello:['Ready for a little city adventure? 💗','You pick the destination, I’ll bring the good mood. ✨','This city feels nicer when we explore it together.','Promise me we’ll stop for a sunset view later? 🌇'],
+ date:['This spot is lovely. Let’s stay a moment. 💕','That’s one more little memory for us.','I’m saving this moment in my imaginary photo album. 📸'],
+ shy:['Stop looking at me like that… you’re making me blush. 💗','Okay, that was actually really sweet.','You always know how to make me smile. 😊']
+};
+function aanyaSpeak(kind='hello'){
+ const lines=aanyaLines[kind]||aanyaLines.hello;
+ const line=lines[Math.floor(Math.random()*lines.length)];
+ const bubble=document.getElementById('aanyaDialogue');
+ if(bubble){bubble.textContent='Aanya: “'+line+'”';bubble.style.display='block';aanyaDialogueUntil=performance.now()+4200}
+ toast(line);
+}
+function changeAanyaOutfit(){
+ aanyaOutfitIndex=(aanyaOutfitIndex+1)%aanyaOutfits.length;
+ const outfit=aanyaOutfits[aanyaOutfitIndex];
+ if(aanya.userData.topMat)aanya.userData.topMat.color.setHex(outfit.top);
+ if(aanya.userData.skirtMat)aanya.userData.skirtMat.color.setHex(outfit.skirt);
+ if(aanya.userData.shoesMat)aanya.userData.shoesMat.color.setHex(outfit.shoes);
+ toast('Aanya changed outfit: '+outfit.name+' 👗');
+}
+function showDateChoices(){
+ const actions=dateChoices.map((choice)=>({label:choice.label,secondary:true,action:()=>{
+   closeModal();relationship=Math.min(100,relationship+choice.bond);companionMood='romantic';
+   aanyaSpeak('date');const bubble=document.getElementById('aanyaDialogue');
+   if(bubble){bubble.textContent='Aanya: “'+choice.line+'”';bubble.style.display='block';aanyaDialogueUntil=performance.now()+5200}
+   $('#companionStatus').textContent='Date mood 💗 · Bond '+relationship+'%';
+   toast('Sweet memory unlocked! Bond +'+choice.bond+'% 💞');
+ }}));
+ openModal('A LITTLE DATE 💗','Choose how you two spend this moment.',actions);
+}
+function startAanyaDate(){
+ if(!gameStarted||paused||privateMode)return;
+ aanyaDateActive=true;showDateChoices();
+}
+function aanyaCompanionGesture(){
+ if(aanya.userData.head){aanya.userData.head.rotation.z=Math.sin(performance.now()*.006)*.09;}
+ aanyaSpeak(Math.random()>.5?'shy':'hello');
+}
+const suiteX=18,suiteZ=-29;
+const suiteMat=(c,rough=.8,metal=0)=>new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal});
+const suiteGroup=new THREE.Group();suiteGroup.position.set(suiteX,0,suiteZ);scene.add(suiteGroup);
+const suiteFloor=new THREE.Mesh(new THREE.BoxGeometry(12,.22,11),suiteMat(0x5a3e50));suiteFloor.position.y=.05;suiteGroup.add(suiteFloor);
+// Back and side walls, leaving a broad front entrance open.
+const wallMat=suiteMat(0x372d49), trimMat=suiteMat(0x9e718e,.55);
+function suiteBox(w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;suiteGroup.add(m);return m}
+suiteBox(12,3.6,.25,wallMat,0,1.85,-5.4);
+suiteBox(.25,3.6,11,wallMat,-5.9,1.85,0);
+suiteBox(.25,3.6,11,wallMat,5.9,1.85,0);
+suiteBox(3.5,3.6,.25,wallMat,-4.25,1.85,5.4);
+suiteBox(3.5,3.6,.25,wallMat,4.25,1.85,5.4);
+suiteBox(12,.16,.18,trimMat,0,3.62,-5.25);
+suiteBox(.18,.16,10.5,trimMat,-5.7,3.62,0);
+suiteBox(.18,.16,10.5,trimMat,5.7,3.62,0);
+// Large window with night-city colored panes, sofa, coffee table, rug and warm lamps.
+const windowMat=new THREE.MeshStandardMaterial({color:0x7ccde4,emissive:0x276d99,emissiveIntensity:.45,transparent:true,opacity:.62,roughness:.25});
+suiteBox(5.4,1.65,.12,windowMat,0,2.25,-5.2);
+suiteBox(.09,1.9,.15,trimMat,0,2.25,-5.1);
+suiteBox(5.5,.09,.15,trimMat,0,2.25,-5.1);
+const rug=suiteBox(6,.07,4.2,suiteMat(0x7e4c72),0,.2,.4);
+suiteBox(3.8,.65,1.1,suiteMat(0x9b6b89),0,.55,-2.1);
+suiteBox(3.9,.22,1.2,suiteMat(0xc18aa9),0,.95,-2.1);
+suiteBox(1.25,.45,.85,suiteMat(0x382d45),0,.55,1.3);
+suiteBox(.9,.09,.6,suiteMat(0x9e718e),0,.81,1.3);
+for(const x of [-4.4,4.4]){
+ const lampBase=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,.1,12),suiteMat(0x44364a));lampBase.position.set(x,.3,-2.8);suiteGroup.add(lampBase);
+ const bulb=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),new THREE.MeshBasicMaterial({color:0xffc4e3}));bulb.position.set(x,2.35,-2.8);suiteGroup.add(bulb);
+ const light=new THREE.PointLight(0xffa9d8,1.2,9);light.position.set(x,2.2,-2.8);suiteGroup.add(light);
+}
+const suiteMarker=new THREE.Mesh(new THREE.TorusGeometry(1.5,.09,8,32),new THREE.MeshStandardMaterial({color:0xff91d0,emissive:0xd9349d,emissiveIntensity:1.2}));
+suiteMarker.rotation.x=Math.PI/2;suiteMarker.position.set(suiteX,.32,suiteZ+7);scene.add(suiteMarker);
+function insideSuite(){return privateMode}
+function enterPrivateSuite(){
+ if(!onFoot){toast('Park first, then press E to exit your car.');return}
+ if(relationship<10){toast('Spend time with Aanya first and build your bond 💗');return}
+ outsidePrivatePos={x:player.position.x,z:player.position.z,rotation:player.rotation.y};
+ privateMode=true;following=false;aanyaRiding=false;companionMode='private';
+ player.position.set(suiteX-1.15,0,suiteZ+1.2);player.rotation.y=0;
+ aanya.position.set(suiteX+1.1,0,suiteZ+1.1);aanya.rotation.y=Math.PI;
+ aanya.visible=true;
+ const el=document.getElementById('privateOverlay');if(el)el.style.display='flex';const bond=document.getElementById('privateBond');if(bond)bond.textContent='Bond '+relationship+'%';const moment=document.getElementById('privateMomentText');if(moment)moment.textContent='Aanya smiles as the warm lamps glow and the city lights shimmer through the window. Press the pink button for a quiet moment together. 💗';
+ toast('Suite entered • Look around to see Aanya and the room 💗');
+}
+function exitPrivateSuite(){
+ privateMode=false;player.position.set(outsidePrivatePos.x,0,outsidePrivatePos.z);player.rotation.y=outsidePrivatePos.rotation;
+ aanya.position.set(player.position.x+2,0,player.position.z+2);following=true;companionMode='following';
+ const el=document.getElementById('privateOverlay');if(el)el.style.display='none';
+ toast('Back to the city. Date night continues whenever you want.');
+}
+function hugMoment(){
+ if(!privateMode)return;
+ affectionAction='hug';affectionUntil=performance.now()+3600;
+ relationship=Math.min(100,relationship+3);companionMood='romantic';
+ const el=document.getElementById('privateMomentText');if(el)el.textContent='You pull Aanya into a warm, mutual hug. She wraps her arms around you and smiles. 🤗💗';
+ const bond=document.getElementById('privateBond');if(bond)bond.textContent='Bond '+relationship+'%';
+ toast('Warm hug with Aanya • Bond +3% 🤗');
+}
+function carryMoment(){
+ if(!privateMode)return;
+ affectionAction='carry';affectionUntil=performance.now()+4200;
+ relationship=Math.min(100,relationship+3);companionMood='romantic';
+ const el=document.getElementById('privateMomentText');if(el)el.textContent='You gently lift Aanya into your arms. She holds on to your shoulders, smiling, while hearts float around you. 💗';
+ const bond=document.getElementById('privateBond');if(bond)bond.textContent='Bond '+relationship+'%';
+ toast('You gently lift Aanya into your arms 💗');
+}
+function kissMoment(){
+ if(!privateMode)return;
+ affectionAction='kiss';affectionUntil=performance.now()+2600;
+ const now=performance.now();
+ if(now<kissUntil)return;
+ kissUntil=now+2600;
+ relationship=Math.min(100,relationship+5);companionMood='romantic';
+ // Bring both adult fictional characters face-to-face for a short, non-explicit kiss animation.
+ player.position.set(suiteX-.48,0,suiteZ+1.05);player.rotation.y=Math.PI/2;
+ aanya.position.set(suiteX+.42,0,suiteZ+1.05);aanya.rotation.y=-Math.PI/2;
+ if(aanya.userData.head){aanya.userData.head.rotation.z=-.12;aanya.userData.head.rotation.y=0;}
+ const el=document.getElementById('privateMomentText');if(el)el.textContent='Aanya smiles, steps closer, and you share a gentle kiss beneath the warm suite lights. 💋💗';
+ const bond=document.getElementById('privateBond');if(bond)bond.textContent='Bond '+relationship+'%';
+ const fade=document.getElementById('romanceFade');if(fade){fade.style.background='radial-gradient(circle at center, #ff75b855, #090610aa 70%)';fade.style.opacity='.7';setTimeout(()=>{fade.style.opacity='0'},850)}
+ toast('A sweet kiss with Aanya 💋 • Bond +5%');
+}
+function privateMoment(){
+ if(!privateMode)return;
+ privateMomentCount++;relationship=Math.min(100,relationship+10);companionMood='romantic';
+ const phrases=[
+  'Aanya smiles and leans against your shoulder. The city noise fades outside. 💗',
+  'You share a quiet cuddle on the sofa and talk about your next adventure. 🌙',
+  'Aanya holds your hand. A soft, cinematic fade-out marks your private moment. ✨',
+  'You both laugh over an old story, then settle in together under the warm lights. 🩷'
+ ];
+ const el=document.getElementById('privateMomentText');if(el)el.textContent=phrases[(privateMomentCount-1)%phrases.length];
+ const bond=document.getElementById('privateBond');if(bond)bond.textContent='Bond '+relationship+'%';
+ const cashEl=document.getElementById('cash');if(cashEl)cashEl.textContent='$ '+cash.toLocaleString('en-US');
+ const fade=document.getElementById('romanceFade');if(fade){fade.style.opacity='1';setTimeout(()=>{fade.style.opacity='0'},500)}
+ toast('A quiet moment together • Bond +10 💗');
+}
+const privateOverlay=document.createElement('div');
+privateOverlay.id='privateOverlay';
+privateOverlay.style.cssText='position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:flex-end;background:transparent;color:#fff;font:500 14px/1.45 system-ui,sans-serif;text-align:left;padding:18px;pointer-events:none';
+privateOverlay.innerHTML='<div style="max-width:355px;width:calc(100vw - 36px);border:1px solid #ffffff42;border-radius:18px;padding:17px;background:linear-gradient(145deg,#171321df,#3c203bdc);box-shadow:0 18px 60px #0009;backdrop-filter:blur(9px);pointer-events:auto"><div style="font-size:28px">🌙 <span style=\"color:#ff9ed2\">♥</span></div><h2 style="margin:4px 0 3px;font-size:20px">Aanya’s Private Suite</h2><div id="privateBond" style="color:#ff9ed2;font-weight:800;margin-bottom:7px">Bond 0%</div><p id="privateMomentText" style="min-height:42px;color:#f1e5f2;margin:7px 0 10px">The city lights glow through the window. Aanya is right here beside you.</p><button id="privateMomentBtn" style="background:#ec75b7;color:#211323;border:0;border-radius:10px;padding:11px 12px;font-weight:800;cursor:pointer;margin:3px">💗 Spend a quiet moment</button><button id="privateHugBtn" style="background:#ffb8d8;color:#25101d;border:0;border-radius:10px;padding:11px 12px;font-weight:900;cursor:pointer;margin:3px">🤗 Hug Aanya</button><button id="privateCarryBtn" style="background:#f7c7ff;color:#25101d;border:0;border-radius:10px;padding:11px 12px;font-weight:900;cursor:pointer;margin:3px">🫶 Lift her in your arms</button><button id="privateKissBtn" style="background:linear-gradient(135deg,#ff9ecb,#ff5f9d);color:#25101d;border:0;border-radius:10px;padding:11px 12px;font-weight:900;cursor:pointer;margin:3px">💋 Share a kiss</button><button id="privateExitBtn" style="background:#ffffff18;color:#fff;border:1px solid #ffffff40;border-radius:10px;padding:11px 12px;font-weight:700;cursor:pointer;margin:3px">🚪 Return to city (H)</button><p style="font-size:11px;color:#d0c1d4;margin:7px 0 0">Look around: the 3D room and both characters stay visible.</p></div>';
+document.body.appendChild(privateOverlay);
+const romanceFade=document.createElement('div');romanceFade.id='romanceFade';romanceFade.style.cssText='position:fixed;inset:0;background:#090610;opacity:0;pointer-events:none;z-index:70;transition:opacity .35s ease';document.body.appendChild(romanceFade);
+document.getElementById('privateMomentBtn').addEventListener('click',privateMoment);
+document.getElementById('privateKissBtn').addEventListener('click',kissMoment);
+document.getElementById('privateHugBtn').addEventListener('click',hugMoment);
+document.getElementById('privateCarryBtn').addEventListener('click',carryMoment);
+document.getElementById('privateExitBtn').addEventListener('click',exitPrivateSuite);
+
+function makeAanya(){
+ const root=new THREE.Group();
+ const skin=new THREE.MeshStandardMaterial({color:0xd99a76,roughness:.76});
+ const skinLight=new THREE.MeshStandardMaterial({color:0xe8b08c,roughness:.7});
+ const hair=new THREE.MeshStandardMaterial({color:0x211719,roughness:.88});
+ const hairShine=new THREE.MeshStandardMaterial({color:0x382326,roughness:.8});
+ const top=new THREE.MeshStandardMaterial({color:0xb85e91,roughness:.78});
+ const skirt=new THREE.MeshStandardMaterial({color:0x303e67,roughness:.85});
+ const shoes=new THREE.MeshStandardMaterial({color:0xeee7ef,roughness:.65});
+ const dark=new THREE.MeshStandardMaterial({color:0x271b24,roughness:.7});
+ const eyeWhite=new THREE.MeshStandardMaterial({color:0xfff7ef,roughness:.4});
+ const iris=new THREE.MeshStandardMaterial({color:0x4a3029,roughness:.35});
+ const pupil=new THREE.MeshStandardMaterial({color:0x130e13,roughness:.25});
+ const glint=new THREE.MeshBasicMaterial({color:0xffffff});
+ const blush=new THREE.MeshStandardMaterial({color:0xe98191,transparent:true,opacity:.38,roughness:1});
+ const lip=new THREE.MeshStandardMaterial({color:0x9b485d,roughness:.65});
+ function ball(parent,mat,pos,scale,seg=16){const m=new THREE.Mesh(new THREE.SphereGeometry(1,seg,12),mat);m.position.set(...pos);m.scale.set(...scale);m.castShadow=true;parent.add(m);return m}
+ function capsule(parent,mat,a,b,r1,r2=r1){const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),dir=v2.clone().sub(v1);const m=new THREE.Mesh(new THREE.CylinderGeometry(r2,r1,dir.length(),10),mat);m.position.copy(v1.clone().add(v2).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());m.castShadow=true;parent.add(m);ball(parent,mat,a,[r1,r1,r1],10);ball(parent,mat,b,[r2,r2,r2],10);return m}
+ // Legs and shoes: keep named pivots so walking/riding animation can control them.
+ const leftLeg=new THREE.Group();leftLeg.position.set(-.105,.72,0);root.add(leftLeg);
+ capsule(leftLeg,skirt,[0,0,0],[-.025,-.40,0],.09,.065);
+ ball(leftLeg,shoes,[-.025,-.615,.055],[.085,.07,.14]);
+ const rightLeg=new THREE.Group();rightLeg.position.set(.105,.72,0);root.add(rightLeg);
+ capsule(rightLeg,skirt,[0,0,0],[.025,-.40,0],.09,.065);
+ ball(rightLeg,shoes,[.025,-.615,.055],[.085,.07,.14]);
+ // torso, shoulders and neck
+ ball(root,top,[0,1.02,0],[.245,.30,.15],20);
+ ball(root,top,[0,1.20,0],[.235,.15,.15],18);
+ capsule(root,skin,[0,1.22,0],[0,1.39,0],.075,.065);
+ // arms with shoulder and elbow forms, animated pivot references preserved
+ const leftArm=new THREE.Group();leftArm.position.set(-.235,1.18,0);root.add(leftArm);
+ capsule(leftArm,top,[0,0,0],[-.045,-.22,.015],.073,.06);
+ capsule(leftArm,skin,[-.045,-.22,.015],[-.035,-.43,.045],.052,.043);
+ ball(leftArm,skin,[-.035,-.43,.045],[.05,.052,.05]);
+ const rightArm=new THREE.Group();rightArm.position.set(.235,1.18,0);root.add(rightArm);
+ capsule(rightArm,top,[0,0,0],[.045,-.22,.015],.073,.06);
+ capsule(rightArm,skin,[.045,-.22,.015],[.035,-.43,.045],.052,.043);
+ ball(rightArm,skin,[.035,-.43,.045],[.05,.052,.05]);
+ // Face/head: head points toward +Z.
+ const head=new THREE.Group();head.position.set(0,1.52,0);root.add(head);
+ ball(head,skin,[0,0,0],[.205,.255,.175],24);
+ // jaw and chin soften the silhouette
+ ball(head,skinLight,[0,-.105,.032],[.155,.125,.145],18);
+ // Ears
+ ball(head,skin,[-.205,-.005,0],[.04,.065,.045],12);
+ ball(head,skin,[.205,-.005,0],[.04,.065,.045],12);
+ // Hair cap, fringe, side locks and long back hair
+ ball(head,hair,[0,.105,-.025],[.218,.19,.185],20);
+ ball(head,hair,[-.16,.015,-.035],[.07,.19,.15],14);
+ ball(head,hair,[.16,.015,-.035],[.07,.19,.15],14);
+ ball(head,hairShine,[-.105,.12,.105],[.075,.085,.045],12);
+ ball(head,hairShine,[.035,.15,.12],[.09,.06,.035],12);
+ // Fringe pieces over forehead
+ ball(head,hair,[ -.075,.09,.135],[.09,.09,.055],14);
+ ball(head,hair,[.025,.075,.15],[.085,.105,.05],14);
+ ball(head,hair,[.105,.055,.135],[.065,.08,.05],12);
+ // Eyes with whites, irises, pupils and highlights
+ for(const s of [-1,1]){
+  ball(head,eyeWhite,[s*.078,.005,.151],[.052,.045,.025],16);
+  ball(head,iris,[s*.078,-.002,.174],[.027,.032,.014],14);
+  ball(head,pupil,[s*.078,-.002,.185],[.014,.021,.008],12);
+  ball(head,glint,[s*.068,.012,.193],[.008,.009,.005],8);
+  // Eyebrows angled subtly
+  const brow=ball(head,hair,[s*.078,.065,.16],[.052,.012,.018],12);brow.rotation.z=s*.12;
+  // cheek blush
+  ball(head,blush,[s*.115,-.065,.144],[.034,.018,.009],12);
+ }
+ // Nose bridge and tip
+ ball(head,skinLight,[0,-.025,.172],[.022,.042,.022],12);
+ ball(head,skin,[0,-.048,.187],[.027,.018,.018],12);
+ // Small smile and lower lip
+ const smile=ball(head,lip,[0,-.105,.162],[.045,.012,.009],14);smile.rotation.z=Math.PI;
+ ball(head,skinLight,[0,-.124,.158],[.032,.008,.008],12);
+ // Earrings
+ for(const s of [-1,1])ball(head,new THREE.MeshStandardMaterial({color:0xf4d38b,metalness:.65,roughness:.25}),[s*.207,-.055,.012],[.018,.024,.015],10);
+ // Neck/face details remain grouped for subtle head movement
+ root.userData.head=head;root.userData.topMat=top;root.userData.skirtMat=skirt;root.userData.shoesMat=shoes;root.userData.leftLeg=leftLeg;root.userData.rightLeg=rightLeg;root.userData.leftArm=leftArm;root.userData.rightArm=rightArm;
+ // Store face parts so the companion can blink and change expression in real time.
+ root.userData.eyeWhites=[];
+ root.userData.eyes=[];
+ root.userData.mouth=smile;
+ root.userData.blushes=[];
+ for(const obj of head.children){
+  if(obj.material===eyeWhite)root.userData.eyeWhites.push(obj);
+  if(obj.material===iris||obj.material===pupil||obj.material===glint)root.userData.eyes.push(obj);
+  if(obj.material===blush)root.userData.blushes.push(obj);
+ }
+ root.userData.leftArm=leftArm;root.userData.rightArm=rightArm;
+ // Tiny necklace and pendant
+ const chainMat=new THREE.MeshStandardMaterial({color:0xf4d38b,metalness:.7,roughness:.25});
+ capsule(root,chainMat,[-.055,1.245,.125],[0,1.205,.15],.008);
+ capsule(root,chainMat,[0,1.205,.15],[.055,1.245,.125],.008);
+ ball(root,chainMat,[0,1.18,.158],[.018,.024,.012],10);
+ root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+ scene.add(root);return root;
+}
+const privateHearts=[];
+for(let i=0;i<7;i++){
+ const heart=new THREE.Group();
+ const heartMat=new THREE.MeshBasicMaterial({color:i%2?0xff7fbd:0xffc2e4,transparent:true,opacity:.85,depthWrite:false});
+ const lobe1=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),heartMat);lobe1.position.set(-.07,.05,0);lobe1.scale.set(1,1,.5);heart.add(lobe1);
+ const lobe2=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),heartMat);lobe2.position.set(.07,.05,0);lobe2.scale.set(1,1,.5);heart.add(lobe2);
+ const tip=new THREE.Mesh(new THREE.ConeGeometry(.12,.19,4),heartMat);tip.rotation.z=Math.PI;tip.position.set(0,-.08,0);heart.add(tip);
+ heart.visible=false;scene.add(heart);privateHearts.push({mesh:heart,phase:i*.9,offset:i*.37});
+}
+const aanya=makeAanya();const aanyaAccentLight=new THREE.PointLight(0xff8fc7,0,5);aanyaAccentLight.position.set(0,2.4,0);scene.add(aanyaAccentLight);aanya.userData.nextBlink=performance.now()+1800;aanya.userData.blinking=false;aanya.userData.blinkEnd=0;aanya.userData.expression='happy';let companionMode='nearby',companionMood='happy',companionCooldown=0,relationship=0,following=true,aanyaRiding=false,dateMissionActive=false,dateMissionStage=0,dateMissionReward=500;
+const dateSpot=new THREE.Vector3(0,0,-15);box(12,.2,8,mat(0x554a69),0,.15,-15);for(let i=0;i<4;i++){box(.2,2,.2,mat(0x30303a),-5+i*3,1.2,-18);let lamp=new THREE.Mesh(new THREE.SphereGeometry(.25,10,8),new THREE.MeshBasicMaterial({color:0xffc7e5}));lamp.position.set(-5+i*3,2.3,-18);scene.add(lamp)}
+const missionSets=[{name:'Express Package',points:[new THREE.Vector3(52,0,-52),new THREE.Vector3(105,0,-105)],reward:750},{name:'Night Market Drop',points:[new THREE.Vector3(-52,0,52),new THREE.Vector3(-157,0,52)],reward:950},{name:'Business District Run',points:[new THREE.Vector3(52,0,105),new THREE.Vector3(105,0,157)],reward:1100},{name:'Harbour Dispatch',points:[new THREE.Vector3(-105,0,-105),new THREE.Vector3(-157,0,-157)],reward:1250},{name:'VIP Courier',points:[new THREE.Vector3(157,0,52),new THREE.Vector3(210,0,105)],reward:1500}];
+let cash=2500,wanted=0,missionIndex=0,missionStage=0,mission=missionSets[0],missionTarget=mission.points[0].clone(),lastCrime=-100,toastTimer=0,paused=false,gameStarted=false;
+const marker=new THREE.Group();scene.add(marker);const ring=new THREE.Mesh(new THREE.TorusGeometry(4,.35,10,36),mat(0x42f5e7,.25,.3));ring.rotation.x=Math.PI/2;marker.add(ring);const beam=new THREE.Mesh(new THREE.CylinderGeometry(.12,1.8,11,20,1,true),new THREE.MeshBasicMaterial({color:0x43f6e6,transparent:true,opacity:.2,side:THREE.DoubleSide}));beam.position.y=5.5;marker.add(beam);
+const keys={};addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='e'&&!paused)toggleVehicle();if(k==='r'&&!paused)recover();if(k==='f'&&!paused)toggleCompanion();if(k==='g'&&!paused)interact();if(k==='p'&&gameStarted)showPause();if(k==='y'&&gameStarted&&!paused&&!privateMode)openPhone();if(k==='j'&&gameStarted&&!paused&&!privateMode)changeAanyaOutfit();if(k==='l'&&gameStarted&&!paused&&!privateMode)aanyaSpeak('hello');if(k==='o'&&gameStarted&&!paused&&!privateMode)startAanyaDate();if(k==='u'&&gameStarted&&!paused&&!privateMode)aanyaCompanionGesture();if(k==='q'&&gameStarted&&!paused&&!privateMode)startAanyaQuest();if(k==='k'&&gameStarted)saveGame();if(k==='t'&&gameStarted&&!paused){rainEnabled=!rainEnabled;toast(rainEnabled?'Rain started 🌧️':'Weather cleared ☀️')}if(k==='c'&&gameStarted&&!paused)garageAction('paint');if(k==='v'&&gameStarted&&!paused)garageAction('engine');if(k==='b'&&gameStarted&&!paused)garageAction('handling');if(k==='n'&&gameStarted&&!paused)garageAction('repair');if(k==='h'&&gameStarted&&!paused){if(privateMode)exitPrivateSuite();else enterPrivateSuite()}if(k==='m'&&gameStarted&&!paused&&privateMode)kissMoment();if(k==='x'&&gameStarted&&!paused&&privateMode)hugMoment();if(k==='z'&&gameStarted&&!paused&&privateMode)carryMoment();if(k==='escape'&&privateMode)exitPrivateSuite();if(k==='escape'&&paused)closeModal()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+// v2.1: reliable touch controls for phones/tablets; button presses mirror keyboard input.
+const touchKeys=new Set();document.querySelectorAll('#touchControls [data-key]').forEach(btn=>{const k=btn.dataset.key;const down=e=>{e.preventDefault();keys[k]=true;touchKeys.add(k);btn.style.background='#167c89e8';try{btn.setPointerCapture(e.pointerId)}catch(_){}};const up=e=>{e.preventDefault();keys[k]=false;touchKeys.delete(k);btn.style.background='#091724c9'};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up)});document.querySelectorAll('#touchControls [data-tap]').forEach(btn=>btn.addEventListener('pointerdown',e=>{e.preventDefault();const k=btn.dataset.tap;btn.style.transform='scale(.96)';setTimeout(()=>btn.style.transform='',120);if(k==='e'&&!paused)toggleVehicle();else if(k==='f'&&!paused)toggleCompanion();else if(k==='h'&&!paused){if(privateMode)exitPrivateSuite();else enterPrivateSuite()}else if(k==='y'&&gameStarted&&!paused&&!privateMode)openPhone()}));addEventListener('blur',()=>{touchKeys.forEach(k=>keys[k]=false);touchKeys.clear()});
+function toast(t){$('#toast').textContent=t;$('#toast').style.opacity=1;toastTimer=2.5}
+function toggleVehicle(){if(onFoot){let near=null,dst=5;for(const c of cars){let d=c.g.position.distanceTo(player.position);if(d<dst){dst=d;near=c}}if(near){activeCar=near;activeCar.ai=false;let ix=traffic.indexOf(activeCar);if(ix>=0)traffic.splice(ix,1);onFoot=false;player.visible=false;toast('Vehicle acquired: '+activeCar.type.toUpperCase())}else toast('Move closer to a vehicle')}else{player.position.copy(activeCar.g.position);player.position.x+=2.4;player.position.z+=1;player.visible=true;activeCar.speed=0;activeCar=null;onFoot=true;toast('Exited vehicle')}}
+function recover(){if(!onFoot&&activeCar){activeCar.g.position.set(3,0,8);activeCar.g.rotation.y=0;activeCar.speed=0;activeCar.health=100;toast('Vehicle repaired and recovered')}else{player.position.set(0,0,0);toast('Returned to city center')}}
+function playerPos(){return onFoot?player.position:(activeCar?activeCar.g.position:player.position)}
+function toggleCompanion(){
+ const pos=playerPos();
+ if(aanyaRiding){aanyaRiding=false;aanya.visible=true;following=true;companionMode='following';aanya.position.set(pos.x+2,0,pos.z+2);toast('Aanya hopped out and is following you 💗');return}
+ if(!onFoot&&activeCar&&Math.hypot(aanya.position.x-pos.x,aanya.position.z-pos.z)<18){
+   aanyaRiding=true;aanya.visible=true;following=false;companionMode='riding';companionMood='happy';toast('Aanya joined you for the ride 🚘');return
+ }
+ if(companionMode==='following'){following=false;companionMode='waiting';aanya.position.set(pos.x+2,0,pos.z+2);toast('Aanya will wait here. Press F to call her.')}
+ else{following=true;companionMode='following';companionMood='happy';toast('Aanya is coming with you 💗')}
+}
+function interact(){
+ if(privateMode){privateMoment();return}
+ let pos=playerPos();
+ if(pos.distanceTo(dateSpot)<13){
+   if(!dateMissionActive){dateMissionActive=true;dateMissionStage=0;toast('DATE MISSION: Take Aanya to the rooftop lookout, then cruise to the riverside beacon!');missionTarget.set(52,0,-15);$('#missionTitle').textContent='City Date';$('#missionText').textContent='Date mission 1/2 • Drive or walk to the riverside beacon.';$('#progressFill').style.width='0%';}
+   else{relationship=Math.min(100,relationship+15);cash+=dateMissionReward;$('#cash').textContent='$ '+cash.toLocaleString('en-US');awardXP(150,'date complete');dateMissionActive=false;companionMood='romantic';aanyaSpeak('date');toast('DATE COMPLETE! +$'+dateMissionReward+' • Bond '+relationship+'%');newMission();}
+ }else if(Math.hypot(pos.x-aanya.position.x,pos.z-aanya.position.z)<5){
+   relationship=Math.min(100,relationship+5);companionMood='happy';aanyaSpeak('hello');toast('Bond '+relationship+'% 💗');
+ }else{toast('Find Aanya, press F to invite her, or visit the rooftop date spot near city center.')}
+}
+function blocked(pos,r=1.2){for(const b of colliders)if(Math.abs(pos.x-b.x)<b.w/2+r&&Math.abs(pos.z-b.z)<b.d/2+r)return true;return false}
+function newMission(){mission=missionSets[missionIndex%missionSets.length];missionStage=0;missionTarget.copy(mission.points[0]);$('#missionTitle').textContent=mission.name;$('#missionText').textContent='Checkpoint 1 of '+mission.points.length+' • Reach the cyan beacon.';$('#progressFill').style.width='0%'}
+newMission();
+function movePlayer(dt){let f=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),s=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);if(f||s){let a=Math.atan2(s,f);player.rotation.y=a;let v=(keys.shift?10:5)*dt,nx=player.position.x+Math.sin(a)*v,nz=player.position.z+Math.cos(a)*v;if(privateMode||!blocked(new THREE.Vector3(nx,0,player.position.z),.45))player.position.x=nx;if(privateMode||!blocked(new THREE.Vector3(player.position.x,0,nz),.45))player.position.z=nz}}
+function moveCar(dt,elapsed){if(!activeCar)return;let c=activeCar,th=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),st=(keys.a||keys.arrowleft?1:0)-(keys.d||keys.arrowright?1:0),boost=keys.shift?1.4:1,accel=c.type==='truck'?13:22,top=(c.baseTop|| (c.type==='truck'?24:32))+(keys.shift?10:0)+(c.engineLevel||0)*5;c.speed+=th*accel*dt*boost;c.speed*=Math.pow(keys[' ']?.91:.988,dt*60);c.speed=THREE.MathUtils.clamp(c.speed,-12,top);c.g.rotation.y+=st*dt*((.48+(c.handlingLevel||0)*.09)+Math.abs(c.speed)*(.027+(c.handlingLevel||0)*.002))*Math.sign(c.speed||1);let nx=c.g.position.x+Math.sin(c.g.rotation.y)*c.speed*dt,nz=c.g.position.z+Math.cos(c.g.rotation.y)*c.speed*dt;if(blocked(new THREE.Vector3(nx,0,nz),Math.max(c.w,c.l)*.38)){c.speed*=-.22;c.health=Math.max(0,c.health-8);if(elapsed-lastCrime>4){wanted=Math.min(5,wanted+1);lastCrime=elapsed;toast('Crash reported • wanted level increased')}}else{c.g.position.x=nx;c.g.position.z=nz}for(const o of traffic)if(o!==c&&c.g.position.distanceTo(o.g.position)<2.7){c.speed*=.72;o.speed*=.5}}
+function moveTraffic(dt){for(const c of traffic){let sp=c.type==='truck'?4.5:7.5;c.g.position.x+=Math.sin(c.g.rotation.y)*sp*dt;c.g.position.z+=Math.cos(c.g.rotation.y)*sp*dt;if(Math.abs(c.g.position.x)>260||Math.abs(c.g.position.z)>260){c.g.position.x*=.8;c.g.position.z*=.8;c.g.rotation.y+=Math.PI/2}if(Math.random()<.001)c.g.rotation.y+=(Math.random()-.5)*.4}}
+function updatePed(dt){for(const p of pedestrians){p.phase+=dt;let nx=p.x+Math.sin(p.phase*.5+p.dir)*dt*.65,nz=p.z+Math.cos(p.phase*.5+p.dir)*dt*.65;if(!blocked(new THREE.Vector3(nx,0,nz),.3)){p.x=nx;p.z=nz;p.g.position.set(p.x,0,p.z)}p.g.rotation.y=p.dir+Math.sin(p.phase)*.3}}
+function animateAanyaFace(){
+ const now=performance.now(),u=aanya.userData;
+ if(!u.head)return;
+ if(now>=u.nextBlink&&!u.blinking){u.blinking=true;u.blinkEnd=now+135;u.nextBlink=now+2300+Math.random()*2400}
+ const blink=u.blinking?Math.max(.08,1-Math.min(1,(now-(u.blinkEnd-135))/135)):1;
+ if(u.blinking&&now>=u.blinkEnd)u.blinking=false;
+ for(const e of u.eyeWhites){e.scale.y=.045*blink}
+ for(const e of u.eyes){if(e.material===iris)e.scale.y=.032*blink;else if(e.material===pupil)e.scale.y=.021*blink;else if(e.material===glint)e.scale.y=.009*blink}
+ const t=now*.001;
+ if(u.head)u.head.rotation.z=Math.sin(t*.8)*.025;
+ if(u.mouth){u.mouth.scale.y=u.expression==='shy'?.008:.012+Math.max(0,Math.sin(t*1.4))*.004}
+ for(const b of u.blushes){b.material.opacity=u.expression==='shy'?.58:.34}
+}
+function updateCompanion(dt){
+ const bubble=document.getElementById('aanyaDialogue');if(bubble&&performance.now()>aanyaDialogueUntil)bubble.style.display='none';
+ let target=playerPos(),heading=onFoot?player.rotation.y:(activeCar?activeCar.g.rotation.y:0),moving=false;
+ aanyaWalkPhase += dt*7;
+ if(privateMode){const t=performance.now()*.001;const now=performance.now();if(now>=affectionUntil)affectionAction='';const action=affectionAction;const kissing=action==='kiss'||now<kissUntil;const hugging=action==='hug';const carrying=action==='carry';if(kissing||hugging||carrying){player.position.x=suiteX-.42;player.position.z=suiteZ+1.05;player.rotation.y=Math.PI/2;aanya.position.set(suiteX+.38,carrying?.45:0,suiteZ+1.05);aanya.rotation.y=-Math.PI/2;if(aanya.userData.head)aanya.userData.head.rotation.z=kissing?-.12:(carrying?-.08:0);if(playerHead)playerHead.rotation.z=kissing?.10:0;playerLeftArm.rotation.x=0;playerRightArm.rotation.x=0;playerLeftArm.rotation.z=hugging?-.85:(carrying?-.55:-.35);playerRightArm.rotation.z=hugging?.85:(carrying?.55:.35);aanya.userData.leftArm.rotation.z=hugging?-.85:(carrying?-.65:-.3);aanya.userData.rightArm.rotation.z=hugging?.85:(carrying?.65:.3);if(carrying){aanya.rotation.z=Math.sin(t*5)*.045;aanya.position.y=.45+Math.sin(t*5)*.035;}else{aanya.rotation.z=0;}}else{aanya.position.set(player.position.x+1.1,0,player.position.z+.7);aanya.rotation.z=0;if(aanya.userData.head){aanya.userData.head.rotation.y=Math.sin(t*1.2)*.12;aanya.userData.head.rotation.z=Math.sin(t*.8)*.025;}aanya.rotation.y=Math.PI+.12*Math.sin(t*.7);if(playerHead)playerHead.rotation.z=0;playerLeftArm.rotation.z=0;playerRightArm.rotation.z=0;aanya.userData.leftArm.rotation.z=Math.sin(t*1.8)*.10;aanya.userData.rightArm.rotation.z=-Math.sin(t*1.8)*.10;}aanyaAccentLight.position.set(aanya.position.x,2.4,aanya.position.z);aanyaAccentLight.intensity=1.15;const sway=Math.sin(t*1.8)*.10;for(const h of privateHearts){h.mesh.visible=true;h.mesh.position.set(aanya.position.x+Math.sin(t+h.phase)*.3,aanya.position.y+2.15+((t+h.offset)%2.1),aanya.position.z+.12+Math.cos(t+h.phase)*.18);h.mesh.scale.setScalar(.72+Math.sin(t*2+h.phase)*.12)}$('#companion').style.display='none';$('#companionStatus').textContent='Private time 💗 · Bond '+relationship+'%';return}for(const h of privateHearts)h.mesh.visible=false;aanyaAccentLight.intensity=0
+ if(aanyaRiding&&!onFoot&&activeCar){
+   const side=1.02,front=-.15;
+   aanya.position.set(target.x+Math.cos(heading)*side+Math.sin(heading)*front,0,target.z-Math.sin(heading)*side+Math.cos(heading)*front);
+   aanya.rotation.y=heading+Math.PI;
+   // Seated pose: hips low, knees forward, arms relaxed.
+   aanya.position.y=-.28;
+   aanya.userData.leftLeg.rotation.x=-1.12;aanya.userData.rightLeg.rotation.x=-1.12;
+   aanya.userData.leftArm.rotation.x=-.28;aanya.userData.rightArm.rotation.x=-.28;
+ }else{
+   aanya.position.y=0;
+   aanya.userData.leftLeg.rotation.x=0;aanya.userData.rightLeg.rotation.x=0;
+   if(following){
+     let tx=target.x-Math.sin(heading)*2.2,tz=target.z-Math.cos(heading)*2.2;
+     let dx=tx-aanya.position.x,dz=tz-aanya.position.z,dist=Math.hypot(dx,dz);
+     if(dist>.9){let step=Math.min(dist,dt*(dist>12?5:2.6));aanya.position.x+=dx/dist*step;aanya.position.z+=dz/dist*step;aanya.rotation.y=Math.atan2(dx,dz);moving=true}
+     else aanya.rotation.y=Math.atan2(target.x-aanya.position.x,target.z-aanya.position.z);
+   }
+   const stride=moving?Math.sin(performance.now()*.012)*.48:Math.sin(performance.now()*.003)*.035;
+   aanya.userData.leftLeg.rotation.x=stride;aanya.userData.rightLeg.rotation.x=-stride;
+   aanya.userData.leftArm.rotation.x=-stride*.65;aanya.userData.rightArm.rotation.x=stride*.65;
+   aanya.position.y=moving?Math.abs(Math.sin(performance.now()*.012))*.045:0;
+ }
+ $('#companion').style.display=gameStarted?'block':'none';
+ $('#companionStatus').textContent=(aanyaRiding?'Riding passenger seat':following?'Following you':'Waiting here')+' · Bond '+relationship+'%'+(companionMood==='romantic'?' · Date memory':'');
+}
+function updateMission(dt){
+ marker.position.copy(missionTarget);ring.rotation.z+=dt*.7;beam.scale.y=1+Math.sin(performance.now()*.002)*.08;
+ let pos=playerPos();
+ if(pos.distanceTo(missionTarget)<7){
+   if(aanyaQuestActive){
+     aanyaQuestStage++;
+     if(aanyaQuestStage<aanyaQuestStops.length){
+       const stop=aanyaQuestStops[aanyaQuestStage];missionTarget.set(stop.x,0,stop.z);
+       $('#missionText').textContent=stop.text;
+       $('#progressFill').style.width=(aanyaQuestStage/aanyaQuestStops.length*100)+'%';
+       aanyaSpeak(aanyaQuestStage===1?'date':'hello');
+       toast('STORY CHECKPOINT: '+stop.title+' 📍');
+     }else{
+       aanyaQuestActive=false;relationship=Math.min(100,relationship+12);cash+=1200;
+       $('#cash').textContent='$ '+cash.toLocaleString('en-US');
+       $('#progressFill').style.width='100%';awardXP(250,'Aanya weekend quest');
+       aanyaSpeak('date');toast('AANYA’S WEEKEND COMPLETE! +$1,200 • Bond +12% 💗');
+       newMission();
+     }
+   }else if(dateMissionActive){
+     if(dateMissionStage===0){dateMissionStage=1;missionTarget.set(-52,0,52);$('#missionText').textContent='Date mission 2/2 • Reach the riverside beacon together.';$('#progressFill').style.width='50%';toast('LOOKOUT REACHED! Now head to the riverside beacon.')}
+     else{dateMissionStage=0;missionTarget.copy(dateSpot);relationship=Math.min(100,relationship+10);cash+=dateMissionReward;$('#cash').textContent='$ '+cash.toLocaleString('en-US');awardXP(150,'city date complete');dateMissionActive=false;companionMood='romantic';aanyaSpeak('date');toast('CITY DATE COMPLETE! +$'+dateMissionReward+' • Bond '+relationship+'%');newMission()}
+   }else{
+     missionStage++;
+     if(missionStage<mission.points.length){missionTarget.copy(mission.points[missionStage]);$('#missionText').textContent='Checkpoint '+(missionStage+1)+' of '+mission.points.length+' • Keep moving.';$('#progressFill').style.width=(missionStage/mission.points.length*100)+'%';toast('CHECKPOINT REACHED')}
+     else{cash+=mission.reward;$('#cash').textContent='$ '+cash.toLocaleString('en-US');awardXP(100,'contract complete');toast('CONTRACT COMPLETE  +$'+mission.reward);missionIndex++;newMission()}
+   }
+ }
+}
+function updateWanted(elapsed){if(wanted>0&&elapsed-lastCrime>18){wanted=Math.max(0,wanted-1);lastCrime=elapsed;toast('Wanted level cooling down')}$('#wanted').textContent='★'.repeat(wanted)+'☆'.repeat(5-wanted);let p=playerPos();$('#district').textContent=(Math.abs(p.x)<60&&Math.abs(p.z)<60?'DOWNTOWN':Math.abs(p.x)>160||Math.abs(p.z)>160?'OUTER CITY':'MIDTOWN')+' DISTRICT'}
+function cameraFollow(dt){let target=playerPos(),heading=onFoot?player.rotation.y:(activeCar?activeCar.g.rotation.y:0),dist=privateMode?7.2:(onFoot?8:11),height=privateMode?3.1:(onFoot?5:6),desired=privateMode?new THREE.Vector3(target.x-4.1,target.y+height,target.z-5.8):new THREE.Vector3(target.x-Math.sin(heading)*dist,target.y+height,target.z-Math.cos(heading)*dist);camera.position.lerp(desired,1-Math.pow(.001,dt));camera.lookAt(target.x+(privateMode?0.7:Math.sin(heading)*.6),target.y+(privateMode?1.15:1.2),target.z+(privateMode?0.25:Math.cos(heading)*.6))}
+function drawMap(){let cv=$('#minimap'),ctx=cv.getContext('2d'),w=cv.width;ctx.clearRect(0,0,w,w);ctx.fillStyle='#182631';ctx.fillRect(0,0,w,w);ctx.save();ctx.translate(w/2,w/2);let pos=playerPos();ctx.scale(.43,.43);ctx.translate(-pos.x,-pos.z);ctx.fillStyle='#3e4b56';for(let i=-cityN;i<=cityN;i++){ctx.fillRect(i*block-roadW/2,-330,roadW,660);ctx.fillRect(-330,i*block-roadW/2,660,roadW)}ctx.fillStyle='#657d6a';for(const b of buildings)ctx.fillRect(b.x-b.w/2,b.z-b.d/2,b.w,b.d);ctx.fillStyle='#47f3e4';ctx.beginPath();ctx.arc(missionTarget.x,missionTarget.z,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff83b8';ctx.beginPath();ctx.arc(aanya.position.x,aanya.position.z,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(pos.x,pos.z,4,0,Math.PI*2);ctx.fill();ctx.restore()}
+function showModal(title,desc,buttons){$('#modalTitle').textContent=title;$('#modalText').textContent=desc;let host=$('#modalButtons');host.innerHTML='';for(const b of buttons){let el=document.createElement('button');el.textContent=b.label;if(b.secondary)el.className='secondary';el.onclick=b.action;host.appendChild(el)}$('#modal').style.display='flex';paused=true;Object.keys(keys).forEach(k=>keys[k]=false)}
+function closeModal(){$('#modal').style.display='none';paused=false}
+function showPause(){showModal('PAUSED','Your city is waiting.',[{label:'RESUME',action:closeModal},{label:'SAVE GAME',secondary:true,action:()=>saveGame()},{label:'LOAD GAME',secondary:true,action:()=>loadGame()}])}
+
+function updateCashHud(){const el=$('#cash');if(el)el.textContent='$ '+cash.toLocaleString('en-US')}
+
+let careerXP=0, careerLevel=1;
+function refreshCareerHud(){
+ careerLevel=Math.floor(careerXP/500)+1;
+ let el=document.getElementById('careerHud');
+ if(!el){
+  el=document.createElement('div');el.id='careerHud';
+  el.style.cssText='position:fixed;left:14px;top:118px;z-index:20;padding:9px 12px;border:1px solid #ffffff30;border-radius:12px;background:#101522cc;color:#f4f7ff;font:600 12px/1.65 system-ui,sans-serif;backdrop-filter:blur(8px);pointer-events:none;min-width:132px;box-shadow:0 8px 28px #0004';
+  document.body.appendChild(el);
+ }
+ const within=careerXP%500;
+ el.innerHTML='🏆 CAREER LEVEL '+careerLevel+'<br><span style="color:#aab7c9">'+careerXP+' XP total</span><br><div style="height:5px;background:#ffffff22;border-radius:9px;margin-top:5px;overflow:hidden"><div style="height:100%;width:'+(within/5)+'%;background:linear-gradient(90deg,#47f3e4,#b2ff80)"></div></div><span style="font-size:10px;color:#aab7c9">'+within+'/500 XP to next level</span>';
+}
+function awardXP(amount,reason){
+ const oldLevel=Math.floor(careerXP/500)+1;
+ careerXP+=amount;
+ const newLevel=Math.floor(careerXP/500)+1;
+ refreshCareerHud();
+ if(newLevel>oldLevel){
+  const bonus=(newLevel-oldLevel)*500;cash+=bonus;updateCashHud();
+  toast('CAREER LEVEL UP! Level '+newLevel+' • +'+amount+' XP • Level bonus +$'+bonus+' 🏆');
+ }else toast('+'+amount+' XP • '+reason);
+}
+function roadsideMechanic(){
+ if(onFoot||!activeCar){toast('Get inside a car before calling the mechanic.');return}
+ if(activeCar.health>=100){toast('Your car is already in great shape.');return}
+ if(cash<400){toast('Mobile mechanic costs $400.');return}
+ cash-=400;activeCar.health=100;activeCar.speed=0;updateCashHud();toast('Mobile mechanic arrived • Car fully repaired 🛠️');
+}
+
+function claimDailyReward(){
+ const today=new Date().toISOString().slice(0,10);
+ try{
+  if(localStorage.getItem('urbanDriveDailyRewardV10')===today){toast('Daily reward already collected. Come back tomorrow!');return}
+  localStorage.setItem('urbanDriveDailyRewardV10',today);
+  cash+=750;updateCashHud();toast('Daily login bonus collected: +$750 💵');
+ }catch(e){toast('Daily reward could not be saved in this browser.')}
+}
+function payOffWanted(){
+ if(wanted<=0){toast('You have no active wanted level.');return}
+ const fine=wanted*350;
+ if(cash<fine){toast('Not enough cash. Fine: $'+fine);return}
+ cash-=fine;wanted=0;updateCashHud();toast('Fine paid: -$'+fine+' • Wanted level cleared');
+}
+function quickTaxi(){
+ if(!onFoot){toast('Exit your vehicle first, then call a taxi.');return}
+ if(cash<250){toast('Taxi fare is $250. Earn a little cash first.');return}
+ cash-=250;player.position.set(garageGroup.position.x+5,0,garageGroup.position.z+2);
+ player.rotation.y=Math.PI/2;updateCashHud();toast('Taxi ride complete • Dropped near the garage 🚕');
+}
+function captureSnapshot(){
+ try{
+  renderer.render(scene,camera);
+  const link=document.createElement('a');link.download='urban-drive-snapshot.png';
+  link.href=renderer.domElement.toDataURL('image/png');link.click();
+  toast('City snapshot captured 📸');
+ }catch(e){toast('Snapshot unavailable in this browser.')}
+}
+function openPhone(){
+ const bond=Math.round(relationship);
+ showModal('📱 CITY PHONE','Wallet: $'+cash.toLocaleString('en-US')+' · Career level: '+careerLevel+' · '+careerXP+' XP · Aanya bond: '+bond+'%',[
+  {label:'DAILY +$750',action:()=>{closeModal();claimDailyReward()}},
+  {label:'CALL AANYA',secondary:true,action:()=>{closeModal();toggleCompanion()}},
+  {label:'AANYA: SHY SMILE 💗',secondary:true,action:()=>{closeModal();aanya.userData.expression='shy';toast('Aanya gives you a shy smile 💗')}},
+  {label:'AANYA: HAPPY MOOD ✨',secondary:true,action:()=>{closeModal();aanya.userData.expression='happy';aanyaSpeak('hello')}},
+  {label:'TALK TO AANYA 💬',secondary:true,action:()=>{closeModal();aanyaSpeak('hello')}},
+  {label:'CHANGE AANYA OUTFIT 👗',secondary:true,action:()=>{closeModal();changeAanyaOutfit()}},
+  {label:'PLAN A LITTLE DATE 🌇',secondary:true,action:()=>{closeModal();startAanyaDate()}},
+  {label:'AANYA’S WEEKEND QUEST 🗺️',secondary:true,action:()=>startAanyaQuest()},
+  {label:'CUTE GESTURE 💞',secondary:true,action:()=>{closeModal();aanyaCompanionGesture()}}, 
+  {label:'SWEET COMPLIMENT 💗',secondary:true,action:()=>{closeModal();aanya.userData.expression='shy';relationship=Math.min(100,relationship+2);aanyaSpeak('shy');$('#companionStatus').textContent='Blushing 💗 · Bond '+relationship+'%'}}, 
+  {label:'TAXI TO GARAGE · $250',secondary:true,action:()=>{closeModal();quickTaxi()}},
+  {label:'PAY FINE',secondary:true,action:()=>{closeModal();payOffWanted()}},
+  {label:'MOBILE MECHANIC · $400',secondary:true,action:()=>{closeModal();roadsideMechanic()}},
+  {label:'CITY SNAPSHOT',secondary:true,action:()=>{closeModal();captureSnapshot()}},
+  {label:'WEATHER',secondary:true,action:()=>{closeModal();rainEnabled=!rainEnabled;toast(rainEnabled?'Rain started 🌧️':'Weather cleared ☀️')}},
+  {label:'CLOSE PHONE',action:closeModal}
+ ]);
+}
+
+function saveGame(){let d={cash,wanted,missionIndex,missionStage,careerXP,careerLevel,onFoot,player:{x:player.position.x,z:player.position.z,rotation:player.rotation.y},car:activeCar?{index:cars.indexOf(activeCar),x:activeCar.g.position.x,z:activeCar.g.position.z,rotation:activeCar.g.rotation.y,speed:activeCar.speed,health:activeCar.health,engineLevel:activeCar.engineLevel,handlingLevel:activeCar.handlingLevel,paintIndex:activeCar.paintIndex}:null,aanya:{x:aanya.position.x,z:aanya.position.z,following,relationship,aanyaRiding},privateMomentCount};try{localStorage.setItem('urbanDriveSaveV21',JSON.stringify(d));toast('GAME SAVED ON THIS DEVICE')}catch(e){toast('Save unavailable in this browser')}}
+function loadGame(){try{let raw=localStorage.getItem('urbanDriveSaveV21');if(!raw){raw=localStorage.getItem('urbanDriveSaveV20');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV19');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV18');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV17');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV16');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV15');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV14');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV13');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV12');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV11');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV10');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV9')||localStorage.getItem('urbanDriveSaveV09');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV11');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){raw=localStorage.getItem('urbanDriveSaveV10');if(raw){try{localStorage.setItem('urbanDriveSaveV21',raw)}catch(e){}}}if(!raw){toast('No save found yet');return}let d=JSON.parse(raw);cash=d.cash||2500;wanted=d.wanted||0;careerXP=d.careerXP||0;careerLevel=Math.floor(careerXP/500)+1;refreshCareerHud();missionIndex=d.missionIndex||0;newMission();missionStage=Math.min(d.missionStage||0,mission.points.length-1);missionTarget.copy(mission.points[missionStage]);player.position.set(d.player?.x||0,0,d.player?.z||0);player.rotation.y=d.player?.rotation||0;onFoot=true;player.visible=true;activeCar=null;if(d.car&&cars[d.car.index]){activeCar=cars[d.car.index];activeCar.g.position.set(d.car.x,0,d.car.z);activeCar.g.rotation.y=d.car.rotation;activeCar.speed=d.car.speed;activeCar.health=d.car.health;activeCar.engineLevel=d.car.engineLevel||0;activeCar.handlingLevel=d.car.handlingLevel||0;activeCar.paintIndex=d.car.paintIndex||0;activeCar.baseTop=(activeCar.type==='truck'?24:32);if(activeCar.bodyMesh)activeCar.bodyMesh.material.color.setHex(paintOptions[activeCar.paintIndex]||0x19c7bc);onFoot=false;player.visible=false}if(d.aanya){aanya.position.set(d.aanya.x,0,d.aanya.z);following=!!d.aanya.following;relationship=d.aanya.relationship||0;privateMomentCount=d.privateMomentCount||0;aanyaRiding=!!d.aanya.aanyaRiding;if(aanyaRiding&&activeCar){aanya.visible=true;following=false}}$('#cash').textContent='$ '+cash.toLocaleString('en-US');toast('SAVE LOADED')}catch(e){toast('Could not load save')}}
+$('#play').onclick=()=>{$('#start').style.display='none';gameStarted=true;document.body.focus();refreshCareerHud();toast('City started! WASD to move • E near a car • H suite • M to kiss inside suite 💗')};
+const clock=new THREE.Clock();let elapsed=0;
+// v0.7 WORLD SYSTEMS: collectible cash drops, a moving day/night cycle, and toggleable rain.
+let worldClock=0, rainEnabled=false, rainPoints=null, rainVelocities=[], cashDrops=[];
+const worldHud=document.createElement('div');
+worldHud.id='worldExtrasHud';
+worldHud.style.cssText='position:fixed;right:14px;top:118px;z-index:20;padding:9px 12px;border:1px solid #ffffff30;border-radius:12px;background:#101522cc;color:#f4f7ff;font:600 12px/1.65 system-ui,sans-serif;backdrop-filter:blur(8px);pointer-events:none;min-width:132px;box-shadow:0 8px 28px #0004';
+worldHud.innerHTML='🌤️ <span id="worldTimeLabel">DAY</span><br>💵 <span id="dropsLeft">8</span> city stashes<br>🌧️ <span id="weatherLabel">Clear</span><br>🛠️ <span id="garageHint">Garage: nearby</span>';
+document.body.appendChild(worldHud);
+
+
+// v0.8 GARAGE: a marked service bay near the city-center spawn.
+let engineUpgradeCost=900, handlingUpgradeCost=700, garagePaintIndex=0;
+const garageGroup=new THREE.Group();garageGroup.position.set(-7,0,8);scene.add(garageGroup);
+const garagePad=new THREE.Mesh(new THREE.CylinderGeometry(4.6,4.6,.16,32),new THREE.MeshStandardMaterial({color:0x182c39,emissive:0x0b9eae,emissiveIntensity:.65,metalness:.35,roughness:.45}));
+garagePad.position.y=.12;garageGroup.add(garagePad);
+const garageRing=new THREE.Mesh(new THREE.TorusGeometry(4.2,.11,8,48),new THREE.MeshStandardMaterial({color:0x55f2df,emissive:0x21d8c6,emissiveIntensity:1.6}));
+garageRing.rotation.x=Math.PI/2;garageRing.position.y=.24;garageGroup.add(garageRing);
+for(let i=0;i<4;i++){const post=new THREE.Mesh(new THREE.BoxGeometry(.14,2.8,.14),new THREE.MeshStandardMaterial({color:0x6feee2,emissive:0x20a99d,emissiveIntensity:.6}));post.position.set(Math.cos(i*Math.PI/2)*3.6,1.4,Math.sin(i*Math.PI/2)*3.6);garageGroup.add(post)}
+const paintOptions=[0x19c7bc,0xe74f66,0x4c87ed,0xffc247,0x9a6bdf,0xf0f0f0,0x222a35,0x52bd79];
+function nearGarage(){const p=playerPos();return Math.hypot(p.x-garageGroup.position.x,p.z-garageGroup.position.z)<10}
+function garageAction(kind){
+ if(!nearGarage()){toast('Garage is at the glowing service pad near city center.');return}
+ if(onFoot||!activeCar){toast('Bring a car into the glowing garage pad first (press E near a car).');return}
+ const c=activeCar;
+ if(kind==='paint'){
+   c.paintIndex=((c.paintIndex||0)+1)%paintOptions.length;
+   c.bodyMesh.material.color.setHex(paintOptions[c.paintIndex]);
+   toast('Custom paint applied 🎨');
+ }else if(kind==='engine'){
+   if((c.engineLevel||0)>=3){toast('Engine is already at MAX level');return}
+   if(cash<engineUpgradeCost){toast('Need $'+engineUpgradeCost+' for engine upgrade');return}
+   cash-=engineUpgradeCost;c.engineLevel=(c.engineLevel||0)+1;c.health=Math.min(100,c.health+10);
+   $('#cash').textContent='$ '+cash.toLocaleString('en-US');toast('Engine upgraded to level '+c.engineLevel+' 🚀');
+ }else if(kind==='handling'){
+   if((c.handlingLevel||0)>=3){toast('Handling is already at MAX level');return}
+   if(cash<handlingUpgradeCost){toast('Need $'+handlingUpgradeCost+' for handling upgrade');return}
+   cash-=handlingUpgradeCost;c.handlingLevel=(c.handlingLevel||0)+1;
+   $('#cash').textContent='$ '+cash.toLocaleString('en-US');toast('Handling upgraded to level '+c.handlingLevel+' 🏁');
+ }else if(kind==='repair'){
+   if(cash<250){toast('Need $250 for a full repair');return}
+   cash-=250;c.health=100;c.speed=0;$('#cash').textContent='$ '+cash.toLocaleString('en-US');toast('Garage service complete • car repaired');
+ }
+}
+
+const dropMaterial=new THREE.MeshStandardMaterial({color:0x7dffb2,emissive:0x1b9a54,emissiveIntensity:1.5,metalness:.25,roughness:.3});
+const dropPositions=[[-42,0,-38],[34,0,-46],[57,0,22],[-60,0,18],[8,0,61],[45,0,57],[-18,0,42],[0,0,-67]];
+for(let i=0;i<dropPositions.length;i++){
+ const group=new THREE.Group();
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(.62,.12,8,18),dropMaterial);
+ ring.rotation.x=Math.PI/2;group.add(ring);
+ const core=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,1),dropMaterial);core.position.y=.35;group.add(core);
+ group.position.set(dropPositions[i][0],.85,dropPositions[i][2]);group.userData={collected:false,phase:i*.8};
+ scene.add(group);cashDrops.push(group);
+}
+const rainCount=450, rainGeo=new THREE.BufferGeometry(), rainArray=new Float32Array(rainCount*3);
+for(let i=0;i<rainCount;i++){rainArray[i*3]=(Math.random()-.5)*100;rainArray[i*3+1]=Math.random()*28;rainArray[i*3+2]=(Math.random()-.5)*100;rainVelocities.push(12+Math.random()*14)}
+rainGeo.setAttribute('position',new THREE.BufferAttribute(rainArray,3));
+rainPoints=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:0xb6d9ff,size:.11,transparent:true,opacity:.7}));
+rainPoints.visible=false;scene.add(rainPoints);
+
+function updateWorldExtras(dt){
+ worldClock=(worldClock+dt*.018)%(Math.PI*2);
+ const daylight=(Math.sin(worldClock-Math.PI/2)+1)/2;
+ const night=daylight<.25;
+ if(scene.background && scene.background.isColor){
+   scene.background.setRGB(.025+.25*daylight,.045+.43*daylight,.09+.55*daylight);
+ }
+ if(scene.fog && scene.fog.color){
+   scene.fog.color.setRGB(.025+.24*daylight,.04+.39*daylight,.075+.48*daylight);
+ }
+ scene.traverse(o=>{
+   if(o.isDirectionalLight){
+     o.intensity=o.userData.baseWorldIntensity!==undefined?o.userData.baseWorldIntensity*(.18+.92*daylight):o.intensity;
+     if(o.userData.baseWorldIntensity===undefined)o.userData.baseWorldIntensity=o.intensity;
+   }
+ });
+ const timeLabel=document.getElementById('worldTimeLabel');
+ if(timeLabel)timeLabel.textContent=night?'NIGHT':daylight<.48?'SUNSET':'DAY';
+ const weatherLabel=document.getElementById('weatherLabel');
+ if(weatherLabel)weatherLabel.textContent=rainEnabled?'Rainy':'Clear';
+ const garageHint=document.getElementById('garageHint');if(garageHint)garageHint.textContent=nearGarage()?'SERVICE BAY READY':'City-center service bay';
+ garageRing.rotation.z+=dt*.22;
+ if(rainPoints){
+   rainPoints.visible=rainEnabled;
+   const arr=rainGeo.attributes.position.array, p=playerPos();
+   for(let i=0;i<rainCount;i++){
+     let ix=i*3;arr[ix+1]-=rainVelocities[i]*dt;
+     if(arr[ix+1]<0){arr[ix+1]=18+Math.random()*12;arr[ix]=p.x+(Math.random()-.5)*90;arr[ix+2]=p.z+(Math.random()-.5)*90}
+     arr[ix]+=dt*1.4;
+   }
+   rainGeo.attributes.position.needsUpdate=true;
+   rainPoints.position.set(p.x,0,p.z);
+ }
+ const p=playerPos();
+ let remaining=0;
+ for(const d of cashDrops){
+   if(d.userData.collected)continue;
+   remaining++;d.rotation.y+=dt*1.25;d.position.y=.85+Math.sin(performance.now()*.002+d.userData.phase)*.16;
+   if(p.distanceTo(d.position)<2.5){
+     d.userData.collected=true;d.visible=false;cash+=250;awardXP(25,'cash stash found');
+     const cashEl=document.getElementById('cash');if(cashEl)cashEl.textContent='$ '+cash.toLocaleString('en-US');
+     toast('CITY STASH FOUND! +$250 💵');
+   }
+ }
+ const left=document.getElementById('dropsLeft');if(left)left.textContent=remaining;
+}
+
+function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.04);if(gameStarted&&!paused&&$('#start').style.display==='none'){elapsed+=dt;if(onFoot)movePlayer(dt);else moveCar(dt,elapsed);moveTraffic(dt);updatePed(dt);animateAanyaFace();updateCompanion(dt);updateMission(dt);updateWanted(elapsed);updateWorldExtras(dt);cameraFollow(dt);$('#speed').textContent=onFoot?0:Math.round(Math.abs(activeCar.speed)*4.2);$('#vehicleLabel').textContent=onFoot?'ON FOOT':activeCar.type.toUpperCase()+(activeCar.health<50?' • DAMAGED':'');if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('#toast').style.opacity=0}drawMap()}renderer.render(scene,camera)}
+camera.position.set(0,8,15);animate();window.__urbanDriveReady=true;addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
