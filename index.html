@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Urban Drive: Open World</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#10151d;color:#fff;font-family:Inter,system-ui,Arial}
+#game{position:fixed;inset:0}canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+.panel{background:linear-gradient(135deg,rgba(10,16,26,.88),rgba(15,27,40,.72));border:1px solid rgba(255,255,255,.16);box-shadow:0 8px 30px #0005;backdrop-filter:blur(10px);border-radius:14px}
+#brand{position:absolute;top:18px;left:18px;padding:12px 16px}#brand strong{letter-spacing:2px;font-size:13px;color:#7ee7ff}#brand div{font-size:11px;color:#b9c6d5;margin-top:3px}
+#stats{position:absolute;top:18px;right:18px;padding:12px 16px;min-width:160px;text-align:right;font-size:12px;color:#c6d3e1;line-height:1.8}#stats b{color:#fff}
+#mission{position:absolute;top:100px;left:18px;padding:12px 15px;max-width:280px;font-size:12px;color:#d6e1ee}#mission strong{display:block;color:#fff;margin-bottom:5px;font-size:13px}
+#toast{position:absolute;top:24%;left:50%;transform:translateX(-50%);padding:12px 18px;opacity:0;transition:opacity .25s;background:#0a1420dd;border:1px solid #7ee7ff88;border-radius:12px;font-size:13px;text-align:center}
+#bottom{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 16px;font-size:12px;color:#d5dfeb;white-space:nowrap}
+#help{position:absolute;bottom:18px;right:18px;padding:12px 14px;font-size:11px;color:#b9c7d7;line-height:1.9}
+.key{display:inline-block;border:1px solid #ffffff55;background:#ffffff12;border-radius:5px;padding:1px 5px;color:#fff;min-width:20px;text-align:center}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#132a3ddd,#070b12f2);pointer-events:auto}
+#start .card{max-width:520px;margin:20px;padding:30px;border-radius:22px;border:1px solid #7ee7ff55;background:#0b1422eF;box-shadow:0 30px 100px #0008}
+#start h1{margin:0 0 8px;font-size:clamp(30px,5vw,52px);letter-spacing:-2px;line-height:1;color:#fff}#start h1 span{color:#7ee7ff}
+#start p{color:#bdcad9;line-height:1.6;font-size:14px}#start button{pointer-events:auto;border:0;border-radius:10px;background:#7ee7ff;color:#06111a;font-weight:800;padding:13px 20px;font-size:14px;cursor:pointer}
+#start small{display:block;color:#8495a9;margin-top:14px;line-height:1.5}
+@media(max-width:650px){#help{display:none}#mission{top:95px;max-width:220px}#bottom{bottom:12px;font-size:10px}#stats{min-width:110px;font-size:10px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+ <div id="brand" class="panel"><strong>URBAN DRIVE</strong><div>OPEN-WORLD PROTOTYPE · BUILD 0.1</div></div>
+ <div id="stats" class="panel">CASH <b id="cash">$500</b><br>VEHICLE <b id="vehicle">ON FOOT</b><br>WANTED <b id="wanted">☆☆☆☆☆</b></div>
+ <div id="mission" class="panel"><strong>FIRST JOB · DELIVERY RUN</strong>Find the glowing cyan marker and drive through it to earn cash.</div>
+ <div id="toast"></div>
+ <div id="bottom" class="panel">WASD move/drive · E enter/exit · SPACE handbrake · SHIFT sprint</div>
+ <div id="help" class="panel"><b>CONTROLS</b><br><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move / drive<br><span class="key">E</span> Enter or exit car<br><span class="key">SHIFT</span> Sprint on foot<br><span class="key">SPACE</span> Handbrake<br><span class="key">R</span> Reset position</div>
+ <div id="start"><div class="card"><h1>YOUR CITY.<br><span>YOUR RULES.</span></h1><p>A free, browser-based open-world driving prototype. Explore a small 3D city, find your car, complete delivery jobs and watch out for the patrol car. This is the first playable foundation, not a full GTA-scale game yet.</p><button id="play">ENTER THE CITY →</button><small>Free starter project · No account inside the game · Internet needed to load the Three.js library the first time.</small></div></div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const root=document.getElementById('game');
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x8cb5ce); scene.fog=new THREE.Fog(0x8cb5ce,95,260);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;root.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xd8edff,0x34404a,2.0));
+const sun=new THREE.DirectionalLight(0xffedce,2.3);sun.position.set(-45,80,35);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun);
+const mat=(c,r=.8,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const groundMat=mat(0x68766f),roadMat=mat(0x303841),lineMat=mat(0xf3d99b),sideMat=mat(0xaaaeb0);
+function box(w,h,d,material,x,y,z,shadow=true){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y,z);o.castShadow=shadow;o.receiveShadow=true;scene.add(o);return o}
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(600,600),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.12;ground.receiveShadow=true;scene.add(ground);
+// City grid
+const roadWidth=12, block=32, extent=128;
+for(let p=-extent;p<=extent;p+=block){
+ box(roadWidth,.04,extent*2+40,roadMat,p,.0,0,false);
+ box(extent*2+40,.04,roadWidth,roadMat,0,.005,p,false);
+ for(let q=-extent;q<extent;q+=8){
+   box(.16,.025,3.5,lineMat,p,.035,q,false);box(3.5,.025,.16,lineMat,q,.035,p,false);
+ }
+}
+// Sidewalk strips
+for(let p=-extent;p<=extent;p+=block){for(const s of [-1,1]){
+ box(2,.12,extent*2+40,sideMat,p+s*7,.04,0,false);box(extent*2+40,.12,2,sideMat,0,.04,p+s*7,false);
+}}
+// buildings on blocks, leave intersections open
+const buildingMats=[0x8d9ba6,0xb4a18e,0x647c8d,0xc3c5bf,0x8a858b,0x62736e].map(c=>mat(c,.92));
+let seed=12345;function rand(){seed=(seed*16807)%2147483647;return(seed-1)/2147483646}
+for(let x=-extent+16;x<extent;x+=block){for(let z=-extent+16;z<extent;z+=block){
+ if(Math.abs(x)<28&&Math.abs(z)<28)continue;
+ const w=10+rand()*8,d=10+rand()*8,h=8+rand()*30;
+ const b=box(w,h,d,buildingMats[Math.floor(rand()*buildingMats.length)],x,h/2,z);
+ // simple lit windows on street-facing sides
+ const winMat=new THREE.MeshStandardMaterial({color:0x9fe4ef,emissive:0x244955,roughness:.35});
+ for(let yy=3;yy<h-2;yy+=3.3){
+  for(let xx=-w/2+1.5;xx<w/2-1;xx+=2.5){
+   const win=new THREE.Mesh(new THREE.BoxGeometry(.9,1.25,.08),winMat);win.position.set(x+xx,yy,z+d/2+.045);scene.add(win);
+  }
+ }
+}}
+// Trees and street lights
+const trunkMat=mat(0x614631),leafMat=mat(0x3e7656);
+for(let x=-112;x<=112;x+=16){for(let z=-112;z<=112;z+=16){
+ if(Math.abs(x%32)<10||Math.abs(z%32)<10)continue;
+ if(rand()>.52){box(.55,2.5,.55,trunkMat,x,1.25,z,false);const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(1.6,1),leafMat);crown.position.set(x,3.2,z);crown.castShadow=true;scene.add(crown);}
+}}
+function makeCar(color,x,z,police=false){
+ const g=new THREE.Group();scene.add(g);g.position.set(x,.55,z);
+ const body=new THREE.Mesh(new THREE.BoxGeometry(2.1,.65,4),mat(color,.38,.25));body.castShadow=true;body.receiveShadow=true;g.add(body);
+ const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.55,.65,1.8),mat(police?0xdce5ed:0x202f3b,.25,.2));cabin.position.set(0,.58,-.15);cabin.castShadow=true;g.add(cabin);
+ const glass=new THREE.MeshStandardMaterial({color:0x79b8cf,metalness:.25,roughness:.15});
+ const wind=new THREE.Mesh(new THREE.BoxGeometry(1.35,.42,.05),glass);wind.position.set(0,.7, .79);wind.rotation.x=-.22;g.add(wind);
+ const wheelMat=mat(0x171b20,.8),wheelGeo=new THREE.CylinderGeometry(.38,.38,.22,12);
+ const wheels=[];
+ for(const xx of [-1.08,1.08])for(const zz of [-1.25,1.25]){const w=new THREE.Mesh(wheelGeo,wheelMat);w.rotation.z=Math.PI/2;w.position.set(xx,-.25,zz);g.add(w);wheels.push(w)}
+ if(police){const bar=box(1.05,.15,.25,mat(0x1d2b3c),0,0,0,false);bar.parent?.remove(bar);g.add(bar);bar.position.set(0,1.02,-.1);bar.material=mat(0x337dff,.3,.1);const lamp=new THREE.PointLight(0x2d72ff,2,8);lamp.position.set(0,1.4,0);g.add(lamp);}
+ return {g,wheels,speed:0,police};
+}
+const player={pos:new THREE.Vector3(0,0,8),angle:0};
+const car=makeCar(0x14b8a6,3,5),patrol=makeCar(0xe8edf2,-18,-20,true);patrol.g.rotation.y=Math.PI*.7;
+const person=new THREE.Group();scene.add(person);
+const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.38,.7,4,8),mat(0x152f52));torso.position.y=1.15;person.add(torso);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.27,16,12),mat(0xd7a77d));head.position.y=1.85;person.add(head);
+const legs= new THREE.Mesh(new THREE.BoxGeometry(.45,.65,.3),mat(0x252a35));legs.position.y=.48;person.add(legs);
+const marker=new THREE.Group();scene.add(marker);marker.position.set(72,0,-72);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(3,.22,8,40),new THREE.MeshStandardMaterial({color:0x50f3ff,emissive:0x087c9a,emissiveIntensity:2}));ring.rotation.x=Math.PI/2;ring.position.y=.25;marker.add(ring);
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(.1,2.3,5,24,1,true),new THREE.MeshBasicMaterial({color:0x25ddff,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}));beam.position.y=2.7;marker.add(beam);
+const markerLight=new THREE.PointLight(0x32eaff,4,22);markerLight.position.y=2;marker.add(markerLight);
+const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase()))e.preventDefault();if(e.key.toLowerCase()==='e')toggleCar();if(e.key.toLowerCase()==='r')reset();});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+let driving=false,cash=500,wanted=0,lastToast=0,toastTimer;
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.opacity=0,2300)}
+function toggleCar(){if(!driving&&person.position.distanceTo(car.g.position)<4){driving=true;person.visible=false;toast('Vehicle entered. Go find the cyan delivery marker!');}else if(driving){driving=false;person.visible=true;person.position.copy(car.g.position);person.position.x+=2.5;toast('You exited the vehicle.');}}
+function reset(){car.g.position.set(3,.55,5);car.g.rotation.set(0,0,0);car.speed=0;player.pos.set(0,0,8);person.position.set(0,0,8);driving=false;person.visible=true;toast('Position reset.')}
+document.getElementById('play').onclick=()=>{document.getElementById('start').style.display='none';toast('Welcome to the city, driver.');};
+person.position.copy(player.pos);
+const clock=new THREE.Clock();let elapsed=0;
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function update(dt){
+ elapsed+=dt;marker.rotation.y+=dt*.65;ring.scale.setScalar(1+Math.sin(elapsed*2.5)*.08);
+ const forward=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),turn=(keys.a||keys.arrowleft?1:0)-(keys.d||keys.arrowright?1:0);
+ if(driving){
+   car.speed+=forward*dt*19;car.speed*=Math.pow(keys[' ']?.90:.985,dt*60);car.speed=clamp(car.speed,-10,27);
+   car.g.rotation.y+=turn*dt*(1.4+Math.abs(car.speed)*.045)*(car.speed<0?-1:1);
+   car.g.position.x+=Math.sin(car.g.rotation.y)*car.speed*dt;car.g.position.z+=Math.cos(car.g.rotation.y)*car.speed*dt;
+   car.g.position.x=clamp(car.g.position.x,-extent,extent);car.g.position.z=clamp(car.g.position.z,-extent,extent);
+   car.wheels.forEach(w=>w.rotation.x+=car.speed*dt*1.8);
+ }else{
+   let v=0;if(forward)v=forward*(keys.shift?12:7);
+   player.angle+=turn*dt*2.5;const dx=Math.sin(player.angle)*v*dt,dz=Math.cos(player.angle)*v*dt;
+   player.pos.x=clamp(player.pos.x+dx,-extent,extent);player.pos.z=clamp(player.pos.z+dz,-extent,extent);
+   person.position.set(player.pos.x,0,player.pos.z);person.rotation.y=player.angle;
+ }
+ // Basic patrol follows the player/car from a distance
+ const target=driving?car.g.position:person.position;const diff=new THREE.Vector3(target.x-patrol.g.position.x,0,target.z-patrol.g.position.z);const dist=diff.length();
+ if(wanted>0&&dist>7){patrol.g.rotation.y=Math.atan2(diff.x,diff.z);patrol.g.position.addScaledVector(diff.normalize(),dt*(5+wanted*1.8));}
+ else if(wanted===0){patrol.g.position.x+=Math.sin(elapsed*.2)*dt*.3;patrol.g.position.z+=Math.cos(elapsed*.2)*dt*.3;}
+ if(dist<5&&wanted>0){wanted=0;toast('Patrol caught up. Wanted level cleared.');}
+ if(driving&&car.g.position.distanceTo(marker.position)<5){cash+=250;document.getElementById('cash').textContent='$'+cash;marker.position.set(rand()*180-90,0,rand()*180-90);wanted=Math.min(5,wanted+1);document.getElementById('mission').innerHTML='<strong>DELIVERY COMPLETE +$250</strong>New delivery location marked in cyan. Patrol attention increased!';toast('Delivery complete! +$250');}
+ document.getElementById('wanted').textContent='★'.repeat(wanted)+'☆'.repeat(5-wanted);
+ document.getElementById('vehicle').textContent=driving?'SPORT SEDAN':'ON FOOT';
+ // camera follows behind target
+ const focus=driving?car.g.position:person.position;
+ const ang=driving?car.g.rotation.y:player.angle;
+ const distance=driving?10:8,height=driving?5.5:4.2;
+ const desired=new THREE.Vector3(focus.x-Math.sin(ang)*distance,focus.y+height,focus.z-Math.cos(ang)*distance);
+ camera.position.lerp(desired,1-Math.pow(.001,dt));camera.lookAt(focus.x,focus.y+1.2,focus.z);
+}
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);update(dt);renderer.render(scene,camera);}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+</script>
+</body></html>
